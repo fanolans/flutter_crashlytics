@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531081962287",
+    "project_id": "flutter-crashlytics-b3594",
+    "storage_bucket": "flutter-crashlytics-b3594.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531081962287:android:7991ad18a373f1c42d37da",
+        "android_client_info": {
+          "package_name": "com.example.flutter_crashlytics"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3ihkDhQ1CnWgTi8PbasStK-Y6OC-HU5g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
