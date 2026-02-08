@@ -2,19 +2,19 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_crashlytics/app_logger.dart';
 import 'package:flutter_crashlytics/crashlytics_logger.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Pass all uncaught errors ke Crashlytics
+  // Flutter framework error
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  // Pass all uncaught asynchronous errors ke Crashlytics
+  // Async / isolate error
   PlatformDispatcher.instance.onError = (error, stack) {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
@@ -52,18 +52,15 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _initializeCrashlytics();
+    _initializeAppLogging();
   }
 
-  Future<void> _initializeCrashlytics() async {
-    // Set user ID (contoh: dari login)
+  Future<void> _initializeAppLogging() async {
     await CrashlyticsLogger.setUserId('user_demo_123');
 
-    // Set custom keys yang persistent
     await CrashlyticsLogger.setCustomKey('app_version', '1.0.0');
     await CrashlyticsLogger.setCustomKey('environment', 'production');
 
-    // Log app start
     await CrashlyticsLogger.logEvent(
       eventId: 'app_start',
       eventName: 'App Started',
@@ -72,36 +69,31 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _incrementCounter() async {
-    // Log event sebelum action
-    await CrashlyticsLogger.logEvent(
-      eventId: 'add_counter',
-      eventName: 'Add Counter Button',
-      description: 'User menekan tombol tambah counter',
-      additionalData: {
-        'counter_value_before': _counter,
-        'timestamp': DateTime.now().toIso8601String(),
-      },
+    await AppLogger.logAction(
+      analyticsEvent: 'add_counter',
+      analyticsParams: {'counter_before': _counter},
+      crashEventId: 'add_counter',
+      crashEventName: 'Add Counter Button',
     );
 
     setState(() {
       _counter++;
     });
 
-    // Log setelah action berhasil
-    await CrashlyticsLogger.logEvent(
-      eventId: 'add_counter_success',
-      eventName: 'Add Counter Success',
-      description: 'Counter berhasil ditambah',
-      additionalData: {'counter_value_after': _counter},
+    await AppLogger.logAction(
+      analyticsEvent: 'add_counter_success',
+      analyticsParams: {'counter_after': _counter},
+      crashEventId: 'add_counter_success',
+      crashEventName: 'Add Counter Success',
     );
   }
 
   Future<void> _decrementCounter() async {
-    await CrashlyticsLogger.logEvent(
-      eventId: 'subtract_counter',
-      eventName: 'Subtract Counter Button',
-      description: 'User menekan tombol kurang counter',
-      additionalData: {'counter_value_before': _counter},
+    await AppLogger.logAction(
+      analyticsEvent: 'subtract_counter',
+      analyticsParams: {'counter_before': _counter},
+      crashEventId: 'subtract_counter',
+      crashEventName: 'Subtract Counter Button',
     );
 
     setState(() {
@@ -110,11 +102,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _resetCounter() async {
-    await CrashlyticsLogger.logEvent(
-      eventId: 'reset_counter',
-      eventName: 'Reset Counter Button',
-      description: 'User mereset counter ke 0',
-      additionalData: {'counter_value_before': _counter},
+    await AppLogger.logAction(
+      analyticsEvent: 'reset_counter',
+      analyticsParams: {'counter_before': _counter},
+      crashEventId: 'reset_counter',
+      crashEventName: 'Reset Counter Button',
     );
 
     setState(() {
@@ -124,29 +116,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _simulateError() async {
     try {
-      await CrashlyticsLogger.logEvent(
-        eventId: 'simulate_error',
-        eventName: 'Simulate Error Button',
-        description: 'User mencoba simulasi error',
+      await AppLogger.logAction(
+        analyticsEvent: 'simulate_error_click',
+        crashEventId: 'simulate_error_click',
+        crashEventName: 'Simulate Error Button',
       );
 
-      // Simulate error
       throw Exception('Ini adalah contoh error untuk testing Crashlytics');
     } catch (e, stackTrace) {
-      // CARA BARU: Gunakan logNonFatalError untuk guarantee visibility
       await CrashlyticsLogger.logNonFatalError(
         eventId: 'simulate_error',
-        eventName: 'Simulate Error Button',
+        eventName: 'Simulate Error',
         error: e,
         stackTrace: stackTrace,
-        additionalData: {
-          'counter_value': _counter,
-          'action': 'simulate_error_clicked',
-          'screen': 'home',
-        },
+        additionalData: {'counter_value': _counter, 'screen': 'home'},
       );
 
-      // Show error ke user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -160,37 +145,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _simulateDivisionByZero() async {
     try {
-      await CrashlyticsLogger.logEvent(
-        eventId: 'division_operation',
-        eventName: 'Division Operation',
-        description: 'User melakukan operasi pembagian',
-        additionalData: {'divisor': 0},
+      await AppLogger.logAction(
+        analyticsEvent: 'division_operation',
+        analyticsParams: {'divisor': 0},
+        crashEventId: 'division_operation',
+        crashEventName: 'Division Operation',
       );
 
-      // Ini akan menyebabkan error
       int result = 100 ~/ 0;
-      if (kDebugMode) {
-        print(result);
-      }
+      debugPrint(result.toString());
     } catch (e, stackTrace) {
-      // Gunakan logNonFatalError untuk non-fatal errors
       await CrashlyticsLogger.logNonFatalError(
-        eventId: 'division_operation',
-        eventName: 'Division Operation',
+        eventId: 'division_by_zero',
+        eventName: 'Division by Zero',
         error: e,
         stackTrace: stackTrace,
-        additionalData: {
-          'operation_type': 'division_by_zero',
-          'dividend': 100,
-          'divisor': 0,
-          'counter_at_error': _counter,
-        },
+        additionalData: {'dividend': 100, 'divisor': 0, 'counter': _counter},
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Non-fatal error: Division by zero logged!'),
+            content: Text('Division by zero logged'),
             backgroundColor: Colors.red,
           ),
         );
